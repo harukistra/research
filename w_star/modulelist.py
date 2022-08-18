@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np 
+import datetime
 
 def load_data(y, month, date):
     if month < 10:
@@ -25,9 +26,8 @@ def omega_w(omega):
     w = - omega / (g * Rho)
     return w
 
-def w_star(year, month, date):
-    data = load_data(year, month, date)
-    v, t, omega = data["V"], data["T"], data["W"]
+def w_star(v, t, omega):
+    # v, t, omega = data["V"], data["T"], data["W"]
     w = omega_w(omega)
     v_mean = v.mean('lon')
     t_mean = t.mean('lon')
@@ -45,6 +45,24 @@ def w_star(year, month, date):
     w_star = vt_prime.differentiate("phi") * R / (N_2 * H * a * cosphi) + w_mean     
 
     return w_star
+
+def load_data_days(start_year, start_month, start_day, end_year, end_month, end_day, para):
+    start_time = datetime.datetime(start_year, start_month, start_day)
+    end_time = datetime.datetime(end_year, end_month, end_day)
+    for t in range((end_time - start_time).days + 1):
+        if t == 0:
+            start_time = start_time
+        else: 
+            start_time += datetime.timedelta(days=1)
+        year, dd = start_time.strftime('%Y'), start_time.strftime("%m%d")
+        print(year, dd)
+        path = f'/data_raid3/JRA3Q/data/{year}/JRA3Q_{year}{dd}.nc'
+        if t==0 :
+            data = xr.open_dataset(path)[f'{para}'].resample(time='1D').mean()
+        else :
+            bdata = xr.open_dataset(path)[f'{para}'].resample(time='1D').mean()
+            data = xr.concat([data,bdata],dim='time')
+    return data
 
 if __name__ == "__main__":
     print("this is created by me")
