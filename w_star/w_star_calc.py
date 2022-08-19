@@ -1,5 +1,6 @@
 import numpy as np 
 import xarray as xr
+import modulelist as ml 
 
 def omega_w(omega):
     g = 9.8
@@ -47,3 +48,43 @@ def w_star(year, month, date):
     w_star = vt_prime.differentiate("phi") * R / (N_2 * H * a * cosphi) + w_mean     
 
     return w_star
+
+#%%
+def calcw(sy, sm, sd, ey, em, ed):
+    v, t, omega = ml.load_data_days(sy, sm, sd, ey, em, ed, "V"), \
+        ml.load_data_days(sy, sm, sd, ey, em, ed, "T"), \
+        ml.load_data_days(sy, sm, sd, ey, em, ed, "W")
+
+    w_s = ml.w_star(v, t, omega)
+
+    return w_s
+
+W1 = calcw(2009, 1, 15, 2009, 2, 15)
+#%%
+W = W1.sel(lev="100")
+print(W)
+
+#%%
+import matplotlib.pyplot as plt 
+import numpy as np 
+import matplotlib.cm as cm 
+time = W["time"]
+
+lat = W["lat"][1:143]
+fig = plt.figure(1, figsize=(15, 7), dpi=300, facecolor="white")
+ax = fig.add_subplot()
+ax.set_ylabel('lat', fontsize=20)
+ax.set_xlabel('time', fontsize=20)
+ax.set_title('W at 100hPa 2009/1/15 ~ 2009/2/15', fontsize=15)
+contf = ax.contourf(time, lat, W[:, 1:143].T, levels=np.arange(-0.01, 0.01, 0.001), cmap=cm.bwr, extend="both")
+plt.colorbar(contf)
+plt.show() 
+# fig.savefig('/data_raid/home/haru/research/fig/w_star/lat_time/100hPa/2009_1_15_2_15_100hPa.png')
+
+#%%
+# print(time[0])
+import datetime 
+t = time[0].values
+da = datetime.datetime.fromtimestamp(t)
+# k = t.strftime("%m%d")
+print(da)
